@@ -7,9 +7,9 @@ import json
 
 # Initialize Flask app
 app = Flask(__name__)
-# Load your model (example function, replace with your actual model loading logic)
+# Load your model
 def load_model(data_id):
-    model_path = f'Task3/models/model_{data_id}.json'
+    model_path = f'Task3Final/models/model_{data_id}.json'
     model = xgb.XGBRegressor()
     print(model_path)
     if os.path.exists(model_path):
@@ -27,9 +27,7 @@ def handle_null_values(df):
     return df
 
 def time_features(df):
-    """
-    Create time series features based on time series index.
-    """
+
     df = df.set_index('timestamp')
     df.index = pd.to_datetime(df.index)
     df['hour'] = df.index.hour
@@ -73,24 +71,19 @@ def pipeline(df, lags=7, windows=7,train=False):
 
 # Prediction function
 def make_prediction(request_body):
-    # Extract dataset_id and values from the request body
     dataset_id = request_body['dataset_id']
     values = request_body['values']
     
-    # Load the corresponding model
     model = load_model(dataset_id)
     if model is None:
         raise ValueError(f"Model for Data ID {dataset_id} not found.")
     
-    # Convert the input values into a DataFrame
     df_input = pd.DataFrame(values)
     df_input = df_input.rename(columns={'time': 'timestamp'})  # Rename for consistency
 
-    # load the summary file
-    with open('Task3/summary.json', 'r') as f:
+    with open('Task3Final/summary.json', 'r') as f:
         summary = json.load(f)
 
-    # Find the best lag and window for the dataset
     best_lag = None
     best_window = None
     for data in summary:
@@ -99,21 +92,17 @@ def make_prediction(request_body):
             best_window = data['best_window']
             break
     
-    # Assuming you have a preprocessing function (pipeline) defined
-    df_input= pipeline(df_input,best_lag,best_window,train=False)  # Apply feature extraction or preprocessing
+    df_input= pipeline(df_input,best_lag,best_window,train=False)  
 
-    df_input = df_input.drop(['value'], axis=1)  # Drop the 'value' column (if present)
+    df_input = df_input.drop(['value'], axis=1) 
 
-    # Ensure the input DataFrame has the expected features
     expected_features = model.get_booster().feature_names
     missing_features = set(expected_features) - set(df_input.columns)
     if missing_features:
         raise ValueError(f"Missing expected features: {missing_features}")
     
-    # Make prediction
     prediction = model.predict(df_input)
 
-    # Prepare the response
     if len(prediction) ==0:
         response = {'prediction': 'no prediction,must have at least {} previous data'.format(max(best_lag,best_window)+1)}
     else:
@@ -125,10 +114,8 @@ def make_prediction(request_body):
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get JSON data from the request
         request_body = request.get_json()
 
-        # Call the make_prediction function
         response = make_prediction(request_body)
         
         return jsonify(response)
