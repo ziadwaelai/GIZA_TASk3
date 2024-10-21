@@ -54,8 +54,9 @@ This is a Flask-based API that provides predictions based on time-series data us
 The request body should be a JSON object with the following keys:
 - `dataset_id`: The ID of the dataset for which you want to make a prediction.
 - `values`: An array of time series data points, with each point containing a `time` (timestamp) and `value` (the feature you are predicting from).
+- `anomly`: Some datasets have an additional column **anomly** which is a binary column that indicates if the value is an anomly or not.
 
-Example JSON request:
+Examples JSON request:
 
 ```json
 {
@@ -65,6 +66,17 @@ Example JSON request:
     {"time": "2021-09-02 06:00:00", "value": null},
     {"time": "2021-09-02 12:00:00", "value": 0.5068339933323015},
     {"time": "2021-09-02 18:00:00", "value": 0.566204629548143}
+  ]
+}
+```
+```json
+{
+  "dataset_id": "9",
+  "values": [
+      {"time": "2021-09-02 00:00:00", "value": 0.4929044474165175,"anomly":1},
+      {"time": "2021-09-02 06:00:00", "value": null,"anomly":0},
+      {"time": "2021-09-02 12:00:00", "value": 0.5068339933323015,"anomly":0},
+      {"time": "2021-09-02 18:00:00", "value": 0.566204629548143,"anomly":1}
   ]
 }
 ```
