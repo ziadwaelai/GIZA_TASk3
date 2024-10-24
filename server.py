@@ -9,7 +9,7 @@ import json
 app = Flask(__name__)
 # Load your model
 def load_model(data_id):
-    model_path = f'Task3Final/models/model_{data_id}.json'
+    model_path = f'models/model_{data_id}.json'
     model = xgb.XGBRegressor()
     print(model_path)
     if os.path.exists(model_path):
@@ -17,6 +17,7 @@ def load_model(data_id):
         print(f"Model for Data ID {data_id} loaded successfully.")
         return model
     else:
+        print(f"yesss")
         return None
 
 # handle null values
@@ -55,10 +56,10 @@ def rolling_window_features(df, windows=7):
     return df
 
 def pipeline(df, lags=7, windows=7,train=False):
+    df = handle_null_values(df)
     # shift the value must the target for the next time step
     df['value'] = df['value'].shift(-1)
     df.dropna(axis=1, how='all', inplace=True) # Drop columns with all NaN values
-    df = handle_null_values(df)
     df = time_features(df)
     best_lag, best_window = lags, windows
     df = lag_features(df, lags=int(best_lag))
@@ -81,7 +82,7 @@ def make_prediction(request_body):
     df_input = pd.DataFrame(values)
     df_input = df_input.rename(columns={'time': 'timestamp'})  # Rename for consistency
 
-    with open('Task3Final/summary.json', 'r') as f:
+    with open('summary.json', 'r') as f:
         summary = json.load(f)
 
     best_lag = None
@@ -104,7 +105,7 @@ def make_prediction(request_body):
     prediction = model.predict(df_input)
 
     if len(prediction) ==0:
-        response = {'prediction': 'no prediction,must have at least {} previous data'.format(max(best_lag,best_window)+1)}
+        raise ValueError( 'no prediction,must have at least {} previous data'.format(max(best_lag,best_window)+1))
     else:
         response = {'prediction': prediction.tolist()[-1]} 
     
